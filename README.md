@@ -5,6 +5,8 @@ Atividade proposta da disciplina de PAA 2026.2
 
 Este projeto realiza uma análise de algoritmos focada na recuperação eficiente de contexto em artigos científicos sobre Modelos de Linguagem (LLMs), Recuperação de Informação (RI) e RAG (Retrieval-Augmented Generation).
 
+Utilizamos o repositório da ACL ANTHOLOGY.
+
 ## Link video apresentação
 
 https://drive.google.com/file/d/1tM8qdJzN7ZpnDLzEfTQ7DrRIJ9Djf31t/view?usp=sharing
