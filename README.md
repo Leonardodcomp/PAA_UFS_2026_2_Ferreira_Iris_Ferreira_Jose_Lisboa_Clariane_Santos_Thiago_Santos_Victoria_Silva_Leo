@@ -1,6 +1,6 @@
 # Projeto e Análise de Algoritmos: Recuperacao-contexto_RAG-articles
 
-Atividade proposta da disciplina de PAA 2026.2 
+Atividade proposta da disciplina de PAA 2026.2   
 
 
 Este projeto realiza uma análise de algoritmos focada na recuperação eficiente de contexto em artigos científicos sobre Modelos de Linguagem (LLMs), Recuperação de Informação (RI) e RAG (Retrieval-Augmented Generation).
