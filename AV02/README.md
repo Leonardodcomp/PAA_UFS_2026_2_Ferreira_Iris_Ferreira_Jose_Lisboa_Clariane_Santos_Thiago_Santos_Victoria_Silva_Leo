@@ -19,7 +19,7 @@ Os artigos utilizados são provenientes da **ACL Anthology**, com temas relacion
 
 - Clariane Maria Oliveira Lisboa
 - Iris Azenate Ferreira
-- José Nilton dos Santos Ferreira
+- José Nilton dos Santos Oliveira
 - Leonardo Souza Silva
 - Thiago de Jesus Santos
 - Victória Cardoso dos Santos
