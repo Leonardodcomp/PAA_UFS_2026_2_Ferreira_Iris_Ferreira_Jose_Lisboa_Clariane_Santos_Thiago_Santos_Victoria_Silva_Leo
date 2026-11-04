@@ -13,7 +13,7 @@ Os artigos utilizados são provenientes da **ACL Anthology**, com temas relacion
 
 ## Link video apresentação
 
-
+https://drive.google.com/file/d/1MBIx6AbKiQ3P_lAueVdiaLOKJwhNf9he/view
 
 ## Equipe (Discentes)
 
