@@ -1,14 +1,21 @@
-# Projeto e Análise de Algoritmos: Seleção de Contexto para RAG
+# Projeto e Análise de Algoritmos: Seleção de Contexto para RAG com Programação Dinâmica
 
 Atividade 2 da disciplina de Projeto e Análise de Algoritmos (PAA) – 2026.2.
 
-Nesta atividade, usamos programação dinâmica para selecionar artigos científicos que possam servir de contexto para sistemas RAG.
+Nesta atividade, modelamos a seleção ótima de contexto para sistemas RAG (Retrieval-Augmented Generation) como uma variação do **Problema da Mochila 0/1**. O objetivo é selecionar o subconjunto de artigos científicos mais relevantes para uma dada consulta sem ultrapassar o limite máximo de tokens ($W$) da janela de contexto de um LLM.
 
-A ideia é escolher os artigos mais relevantes sem ultrapassar um limite de tokens. Para isso, comparamos três métodos: o ranking da AV1, uma abordagem gulosa e a programação dinâmica.
+Para isso, comparamos três abordagens centrais:
+1. **Ranking da AV1** (Baseline 1): Ordenação decrescente por relevância lexical até atingir o limite de tokens ($O(N \log N)$).
+2. **Abordagem Gulosa** (Baseline 2): Heurística por densidade de valor ($\text{score} / \text{tokens}$) ($O(N \log N)$).
+3. **Programação Dinâmica (DP)**: Solução exata que encontra o subconjunto ótimo global respeitando estritamente a capacidade ($O(N \cdot W)$, pseudo-polinomial).
 
-Os artigos utilizados são da ACL Anthology, com temas relacionados a LLMs, recuperação de informação e RAG.
+Os artigos utilizados são provenientes da **ACL Anthology**, com temas relacionados a Modelos de Linguagem (LLMs), Recuperação de Informação (RI) e RAG.
 
-## Equipe
+## Link video apresentação
+
+
+
+## Equipe (Discentes)
 
 - Clariane Maria Oliveira Lisboa
 - Iris Azenate Ferreira
@@ -17,201 +24,56 @@ Os artigos utilizados são da ACL Anthology, com temas relacionados a LLMs, recu
 - Thiago de Jesus Santos
 - Victória Cardoso dos Santos
 
+## Ambiente Recomendado
 
-1- INSTALAÇÃO E CONFIGURAÇÕES (Instala as Bibliotecas e define os parâmetros, as consultas e as pastas usadas nos experimentos )
-Responsável: Íris
+O projeto foi desenvolvido em formato Jupyter Notebook (`.ipynb`) e é altamente recomendado que seja executado no **Google Colab**. Uma vez que o notebook já contém as diretivas de ambiente necessárias para baixar os pacotes diretamente no runtime do Colab, eliminando a necessidade de configuração complexa de ambiente virtual local.
 
-%pip -q install pandas numpy matplotlib nltk acl-anthology tiktoken sentence-transformers scikit-learn
-Saída da execução
-0KB
-	Stream
-		Note: you may need to restart the kernel to use updated packages.
-		[notice] A new release of pip is available: 25.1.1 -> 26.2.2
-		[notice] To update, run: python.exe -m pip install --upgrade pip
+## Dependências
 
-Célula de código <undefined>
-# %% [code]
-import json
-import math
-import platform
-import random
-import re
-import subprocess
-import sys
-import time
-import tracemalloc
-from collections import Counter, defaultdict
-from pathlib import Path
-import importlib.metadata as metadata
+As bibliotecas externas necessárias para a execução do projeto foram deixadas prontas para instalação automática na primeira célula do notebook. São elas:
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import tiktoken
-from IPython.display import display
-from nltk.stem import PorterStemmer
+- `pandas` e `numpy` (manipulação de dados, matrizes e estruturas tabulares)
+- `matplotlib` (geração de gráficos comparativos e análises assintóticas)
+- `nltk` (tokenização, normalização e stemming com PorterStemmer)
+- `acl-anthology` (coleta e estruturação do corpus de artigos científicos)
+- `tiktoken` (contagem precisa de tokens reais via codificador `cl100k_base`)
+- `sentence-transformers` (geração de embeddings com o modelo `all-MiniLM-L6-v2` para o gabarito semântico)
+- `scikit-learn` (cálculo de similaridade de cosseno e métricas de avaliação)
 
-SEMENTE = 42
-SEED = SEMENTE  # nome usado nos testes
-random.seed(SEMENTE)
-np.random.seed(SEMENTE)
+## Parâmetros do Experimento
 
-PASTA_DADOS = Path('dados')
-PASTA_SAIDA = Path('resultados_av2')
-PASTA_DADOS.mkdir(exist_ok=True)
-PASTA_SAIDA.mkdir(exist_ok=True)
-ARQUIVO_CORPUS = PASTA_DADOS / 'acl_corpus_av1.csv'
+O notebook foi configurado para garantir a reprodutibilidade dos testes. Os principais parâmetros utilizados na coleta e na análise são:
 
-N_ARTIGOS_COLETA = 18000
-ESCALAS_CORPUS = [500, 1000]  # duas quantidades de artigos
-ESCALAS_CANDIDATOS = [20, 50]  # quantos resultados chegam à mochila
-REPETICOES = 3
-CONSULTAS_EXPERIMENTO = ['Q1', 'Q3', 'Q5']
+- `SEED = 42`: Fixado para semente de aleatoriedade (`random` e `numpy`), assegurando consistência nos resultados.
+- `N_ARTIGOS_COLETA = 18000`: Quantidade inicial de artigos pré-selecionados da ACL Anthology via pontuação lexical simples.
+- `QUERY_TERMS`: Termos utilizados para a filtragem inicial (`"retrieval augmented generation"`, `"information retrieval"`, `"large language model"`).
+- `ESCALAS_CORPUS = [500, 1000]`: Tamanhos do corpus de artigos avaliados no experimento de benchmark.
+- `ESCALAS_CANDIDATOS = [20, 50]`: Quantidade de artigos candidatos ($N$) pré-selecionados pela recuperação lexical que chegam como itens para a mochila.
+- `TOKENIZADOR_NOME = 'cl100k_base'`: Codificação do `tiktoken` para contagem real do custo de tokens de cada artigo (título + resumo).
+- `ORCAMENTOS (W)`: Capacidades da mochila calculadas a partir da mediana dos custos de tokens ($3 \times$ e $6 \times$ a mediana empírica, e.g., $W_1 = 708$ e $W_2 = 1416$ tokens).
+- `CONSULTAS_EXPERIMENTO = ['Q1', 'Q3', 'Q5']`: Consultas benchmark utilizadas para as medições comparativas.
+- `REPETICOES = 3`: Número de repetições por cenário no benchmark (totalizando 216 execuções mensuráveis com monitoramento de tempo e consumo de memória com `tracemalloc`).
+- `MODELO_SEMANTICO = 'sentence-transformers/all-MiniLM-L6-v2'`: Modelo para geração de embeddings e gabarito semântico para cálculo das métricas de precisão.
 
-TOKENIZADOR_NOME = 'cl100k_base'
-ENC = tiktoken.get_encoding(TOKENIZADOR_NOME)
-QUERY_TERMS = ['retrieval augmented generation', 'information retrieval', 'large language model']
-QUERIES = {
-    'Q1': 'What information retrieval methods are used in RAG systems?',
-    'Q2': 'Which studies compare sparse retrieval and dense retrieval?',
-    'Q3': 'What semantic search techniques are used to retrieve context for language models?',
-    'Q4': 'What reranking methods are used in retrieval systems for LLMs?',
-    'Q5': 'What metrics are used to evaluate Retrieval-Augmented Generation systems?',
-    'Q6': 'Which papers use embeddings for document retrieval?',
-    'Q7': 'What techniques are used to select the most relevant documents or excerpts for a language model?',
-    'Q8': 'Which methods were compared for context retrieval?',
-    'Q9': 'What limitations of RAG systems are reported in the articles?',
-    'Q10': 'What chunking strategies are used in document retrieval?'
-}
+## Como Reproduzir
 
-print('Sistema:', platform.platform())
-print('Python:', platform.python_version())
-try:
-    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True, stderr=subprocess.DEVNULL).strip()
-except Exception:
-    commit = 'preencher após publicar no GitHub'
-print('Commit:', commit)
-Saída da execução
-0KB
-	Stream
-		Sistema: Windows-11-10.0.26200-SP0
-		Python: 3.13.5
-		Commit: preencher após publicar no GitHub
+Para reproduzir este experimento, siga os passos abaixo:
 
-Célula de texto <undefined>
-# %% [markdown]
-## 2. Corpus da AV1
-Carrega os artigos a partir do CSV ou, se ele não existir, coleta os artigos na ACL Anthology.
-Responsável: Iris
-
-Célula de código <undefined>
-# %% [code]
-def contar_termos(texto, termos):
-    """Pontuação para filtrar artigos na coleta inicial."""
-    return sum(texto.count(termo) for termo in termos)
-
-
-def baixar_artigos_acl(termos, quantidade):
-    from acl_anthology import Anthology
-
-    biblioteca = Anthology.from_repo()
-    encontrados = []
-    for artigo in biblioteca.papers():
-        if artigo.title is None or artigo.abstract is None:
-            continue
-
-        titulo = str(artigo.title)
-        resumo = str(artigo.abstract)
-        pontos = contar_termos((titulo + ' ' + resumo).lower(), termos)
-        if pontos > 0:
-            encontrados.append({
-                'id': str(artigo.full_id), 'title': titulo,
-                'abstract': resumo, 'year': artigo.year,
-                'doi': str(artigo.doi or ''), 'url': str(artigo.web_url),
-                'pontos_coleta': pontos
-            })
-
-    encontrados.sort(key=lambda x: (x['pontos_coleta'], int(x['year'] or 0)), reverse=True)
-    return pd.DataFrame(encontrados[:quantidade]).drop(columns='pontos_coleta')
-
-
-if ARQUIVO_CORPUS.exists():
-    df = pd.read_csv(ARQUIVO_CORPUS, dtype={'id': str})
-    origem = 'CSV da AV1'
-else:
-    try:
-        df = baixar_artigos_acl(QUERY_TERMS, N_ARTIGOS_COLETA)
-    except Exception as erro:
-        raise RuntimeError('Coloque o CSV real da AV1 em dados/acl_corpus_av1.csv') from erro
-    df.to_csv(ARQUIVO_CORPUS, index=False)
-    origem = 'Nova coleta da ACL Anthology'
-
-colunas = {'id', 'title', 'abstract', 'year', 'url'}
-assert colunas.issubset(df.columns), 'O CSV não contém todas as colunas necessárias.'
-df = df.dropna(subset=['id', 'title', 'abstract'])
-df = df.drop_duplicates(subset='id').reset_index(drop=True)
-assert len(df) >= max(ESCALAS_CORPUS), 'São necessários pelo menos 1000 artigos reais.'
-
-print('Origem:', origem, '| Artigos:', len(df))
-display(df[['id', 'title', 'year']].head())
-Saída da execução
-2KB
-	Stream
-		Origem: CSV da AV1 | Artigos: 17990
-	text/plain
-		id                                              title  \
-		0  2025.findings-emnlp.989  LlmFixer: Fix the Helpfulness of Defensive Lar...   
-		1   2024.findings-naacl.43    Measuring Social Norms of Large Language Models   
-		2     2025.emnlp-main.1006  Flaw or Artifact? Rethinking Prompt Sensitivit...   
-		3   2025.findings-naacl.27  CLaMP 2: Multimodal Music Information Retrieva...   
-		4   2025.findings-acl.1014  Evaluating the Long-Term Memory of Large Langu...   
-		
-		   year  
-		0  2025  
-		1  2024  
-		2  2025  
-		3  2025  
-		4  2025
-Célula de texto <undefined>
-# %% [markdown]
-## 3. Custos em tokens
-Conta os tokens de cada artigo (título + resumo) com o tokenizador cl100k_base e mostra a distribuição dos custos.
-
-Responsável: Iris
-
-Célula de código <undefined>
-# %% [code]
-def custo_tokens(texto):
-    """Conta tokens reais do texto original (título + resumo), não palavras."""
-    return len(ENC.encode(str(texto)))
-
-
-custos = np.array([custo_tokens(str(t) + ' ' + str(a)) for t, a in zip(df['title'], df['abstract'])], dtype=int)
-assert (custos > 0).all()
-
-estat_custos = pd.DataFrame([{
-    'min': int(custos.min()), 'p25': float(np.percentile(custos, 25)),
-    'mediana': float(np.median(custos)), 'p75': float(np.percentile(custos, 75)),
-    'p90': float(np.percentile(custos, 90)), 'max': int(custos.max())
-}])
-display(estat_custos)
-
-plt.figure(figsize=(8, 4))
-plt.hist(custos, bins=30)
-plt.xlabel('Tokens por artigo (título + resumo)')
-plt.ylabel('Número de artigos')
-plt.title('Distribuição dos custos em tokens')
-plt.tight_layout()
-plt.savefig(PASTA_SAIDA / 'histograma_tokens.png', dpi=150)
-plt.show()
-Saída da execução
-29KB
-	text/plain
-		min    p25  mediana    p75    p90  max
-		0   45  206.0    236.0  267.0  297.0  853
-		<Figure size 800x400 with 1 Axes>
-
-Célula de texto <undefined>
-# %% [markdown]
-## 4. Problema da mochila e orçamento W
-Trata a seleção como mochila 0/1 (capacidade = W, peso = tokens do artigo, valor = score) e define os dois orçamentos W a partir da mediana dos custos.
+1. Faça o clone deste repositório ou baixe o arquivo `PAA_AV2_Selecao_tokens_DP.ipynb`.
+2. Acesse o [Google Colab](https://colab.research.google.com/).
+3. Faça o upload do arquivo `PAA_AV2_Selecao_tokens_Mochila01_DP.ipynb` para a plataforma.
+4. No menu superior, clique em **Ambiente de Execução** (Runtime) > **Executar tudo** (Run all).
+5. A primeira célula cuidará da instalação das dependências. A execução seguirá o fluxo:
+   - **Instalação e configurações**: Inicialização de diretórios (`dados/`, `resultados_av2/`) e configuração de sementes e hiperparâmetros.
+   - **Carregamento do Corpus**: Leitura do CSV da AV1 (`dados/acl_corpus_av1.csv`) ou download direto dos artigos da ACL Anthology.
+   - **Contagem e Custos em Tokens**: Tokenização via `tiktoken` e análise da distribuição estatística dos custos por documento.
+   - **Definição da Mochila e Orçamentos ($W$)**: Cálculo das capacidades de corte baseadas na mediana dos custos em tokens.
+   - **Validação de Entrada e Formato**: Testes prévios de consistência de dados e contrato de retorno dos algoritmos.
+   - **Busca Lexical e Candidatos**: Normalização e índice invertido para filtrar os $N$ candidatos mais relevantes para cada consulta.
+   - **Métodos de Seleção**: Execução do Ranking AV1, Heurística Gulosa (densidade de valor) e Programação Dinâmica (Mochila 0/1 com reconstrução de itens).
+   - **Testes de Corretude e Casos de Borda**: Validação contra Busca Exaustiva em instâncias controladas e teste de contraexemplo do algoritmo guloso.
+   - **Prova Formal de Corretude**: Justificativa por indução matemática da subestrutura ótima e sobreposição de subproblemas na DP.
+   - **Benchmark Experimental**: Execução das 216 medições automatizadas coletando tempo de execução, pico de memória (`tracemalloc`), valor total, precisão e redundância (Jaccard).
+   - **Análise Assintótica**: Medição prática da pseudo-polinomialidade aumentando $W$ com $N$ constante.
+   - **Montagem do Contexto RAG**: Geração do prompt formatado com os artigos selecionados e análise das limitações práticas.
+   - **Reprodutibilidade e Metadados**: Exportação dos gráficos gerados e do arquivo `metadados.json` com especificações do ambiente e hash do corpus.
