@@ -5,9 +5,9 @@ Atividade 2 da disciplina de Projeto e Análise de Algoritmos (PAA) – 2026.2.
 Nesta atividade, modelamos a seleção ótima de contexto para sistemas RAG (Retrieval-Augmented Generation) como uma variação do **Problema da Mochila 0/1**. O objetivo é selecionar o subconjunto de artigos científicos mais relevantes para uma dada consulta sem ultrapassar o limite máximo de tokens ($W$) da janela de contexto de um LLM.
 
 Para isso, comparamos três abordagens centrais:
-1. **Ranking da AV1** (Baseline 1): Ordenação decrescente por relevância lexical até atingir o limite de tokens ($O(N \log N)$).
-2. **Abordagem Gulosa** (Baseline 2): Heurística por densidade de valor ($\text{score} / \text{tokens}$) ($O(N \log N)$).
-3. **Programação Dinâmica (DP)**: Solução exata que encontra o subconjunto ótimo global respeitando estritamente a capacidade ($O(N \cdot W)$, pseudo-polinomial).
+1. Ranking da AV1 (Baseline 1): Ordenação decrescente por relevância lexical até atingir o limite de tokens (`O(N log N)`).
+2. Abordagem Gulosa (Baseline 2): Heurística por densidade de valor (score/tokens) (`O(N log N)`).
+3. Programação Dinâmica (DP): Solução exata que encontra o subconjunto ótimo global respeitando estritamente a capacidade (`O(N * W)`, pseudo-polinomial).
 
 Os artigos utilizados são provenientes da **ACL Anthology**, com temas relacionados a Modelos de Linguagem (LLMs), Recuperação de Informação (RI) e RAG.
 
